@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CRIMSON — Stream Everything</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <meta name="ext-resource-dependency" content="https://image.tmdb.org/t/p/">
+  <meta name="ext-resource-dependency" content="https://api.themoviedb.org/3/">
+  <meta name="ext-resource-dependency" content="https://www.vidking.net/embed/">
+  <style>
+    html, body { margin:0; padding:0; background:#060608; }
+    * { box-sizing:border-box; }
+    ::selection { background:#e50914; color:#fff; }
+    ::-webkit-scrollbar { width:10px; height:10px; }
+    ::-webkit-scrollbar-track { background:#0a0a0d; }
+    ::-webkit-scrollbar-thumb { background:#2a2a30; border-radius:6px; }
+    ::-webkit-scrollbar-thumb:hover { background:#e50914; }
+    @keyframes floaty { 0%,100% { transform:translateY(0px) } 50% { transform:translateY(-18px) } }
+    @keyframes floaty2 { 0%,100% { transform:translateY(-10px) } 50% { transform:translateY(14px) } }
+    @keyframes orbdrift { 0%,100% { transform:translate(0,0) scale(1) } 50% { transform:translate(60px,-40px) scale(1.15) } }
+    @keyframes orbdrift2 { 0%,100% { transform:translate(0,0) scale(1.1) } 50% { transform:translate(-80px,50px) scale(0.95) } }
+    @keyframes marquee { 0% { transform:translateX(0) } 100% { transform:translateX(-50%) } }
+    @keyframes pulseglow { 0%,100% { opacity:.55 } 50% { opacity:1 } }
+    @keyframes fadeup { 0% { opacity:0; transform:translateY(24px) } 100% { opacity:1; transform:translateY(0) } }
+    @keyframes spinslow { 0% { transform:rotate(0deg) } 100% { transform:rotate(360deg) } }
+  </style>
+</helmet>
+<template id="__bundler_thumbnail">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#060608"/><circle cx="50" cy="50" r="16" fill="#e50914"/><polygon points="45,41 45,59 60,50" fill="#fff"/></svg>
+</template>
+<div ref="{{ rootRef }}" data-screen-label="Crimson" style="min-height:100vh; background:#060608; color:#f5f2ee; font-family:'Sora',sans-serif; overflow-x:clip; position:relative">
+
+  <!-- ambient fx -->
+  <sc-if value="{{ showFx }}" hint-placeholder-val="{{ true }}">
+    <div style="position:fixed; inset:0; pointer-events:none; z-index:1; overflow:hidden">
+      <div style="position:absolute; top:-180px; left:-120px; width:560px; height:560px; border-radius:50%; background:radial-gradient(circle, rgba(229,9,20,0.22), transparent 65%); filter:blur(60px); animation:orbdrift 14s ease-in-out infinite"></div>
+      <div style="position:absolute; bottom:-200px; right:-140px; width:640px; height:640px; border-radius:50%; background:radial-gradient(circle, rgba(229,9,20,0.14), transparent 65%); filter:blur(70px); animation:orbdrift2 18s ease-in-out infinite"></div>
+    </div>
+  </sc-if>
+
+  <!-- glass nav -->
+  <div style="position:fixed; top:0; left:0; right:0; z-index:90; display:flex; align-items:center; justify-content:space-between; gap:24px; padding:14px 40px; background:rgba(8,8,11,0.5); backdrop-filter:blur(24px) saturate(160%); -webkit-backdrop-filter:blur(24px) saturate(160%); border-bottom:1px solid rgba(255,255,255,0.07)">
+    <div onClick="{{ goHome }}" style="display:flex; align-items:center; gap:10px; cursor:pointer">
+      <div style="width:12px; height:12px; border-radius:50%; background:var(--accent,#e50914); box-shadow:0 0 18px var(--accent,#e50914); animation:pulseglow 3s ease-in-out infinite"></div>
+      <div style="font-family:'Bebas Neue',sans-serif; font-size:30px; letter-spacing:5px; line-height:1">CRIMSON</div>
+    </div>
+    <div style="display:flex; align-items:center; gap:6px">
+      <sc-for list="{{ navLinks }}" as="lnk" hint-placeholder-count="3">
+        <button onClick="{{ lnk.go }}" style="background:none; border:0; cursor:pointer; font-family:'Sora',sans-serif; font-size:14px; font-weight:500; padding:9px 18px; border-radius:999px; color:{{ lnk.color }}; background-color:{{ lnk.bg }}; transition:all .25s" style-hover="color:#fff; background-color:rgba(255,255,255,0.08)">{{ lnk.label }}</button>
+      </sc-for>
+    </div>
+    <button onClick="{{ openSearch }}" style="display:flex; align-items:center; gap:10px; cursor:pointer; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#c9c6c2; font-family:'Sora',sans-serif; font-size:13px; padding:10px 20px; border-radius:999px; backdrop-filter:blur(10px); transition:all .25s" style-hover="border-color:var(--accent,#e50914); color:#fff; box-shadow:0 0 24px rgba(229,9,20,0.35)">
+      <span style="font-size:15px">⌕</span> Search titles…
+    </button>
+  </div>
+
+  <!-- ============ HOME ============ -->
+  <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+    <div data-screen-label="Home">
+
+      <!-- HERO -->
+      <div style="position:relative; min-height:100vh; display:flex; align-items:center; overflow:clip">
+        <img src="https://image.tmdb.org/t/p/{{ featured.backdropPath }}" alt="" style="position:absolute; top:-80px; left:0; width:100%; height:calc(100% + 160px); object-fit:cover; opacity:0.45; transform:translateY(calc(var(--sy,0) * 0.22px)) scale(1.06); filter:saturate(1.15)">
+        <div style="position:absolute; inset:0; background:linear-gradient(90deg, rgba(6,6,8,0.97) 0%, rgba(6,6,8,0.75) 42%, rgba(6,6,8,0.25) 100%)"></div>
+        <div style="position:absolute; inset:0; background:linear-gradient(0deg, #060608 2%, transparent 40%)"></div>
+        <div style="position:relative; z-index:2; display:flex; align-items:center; justify-content:space-between; gap:60px; width:100%; padding:120px 72px 80px">
+          <div style="max-width:640px; animation:fadeup .8s ease both">
+            <div style="display:inline-flex; align-items:center; gap:10px; padding:7px 16px; border-radius:999px; background:rgba(229,9,20,0.12); border:1px solid rgba(229,9,20,0.4); backdrop-filter:blur(12px); font-size:12px; font-weight:600; letter-spacing:2.5px; text-transform:uppercase; color:#ff8189; margin-bottom:26px">
+              <span style="width:7px; height:7px; border-radius:50%; background:var(--accent,#e50914); animation:pulseglow 2s infinite"></span>
+              {{ featured.badge }}
+            </div>
+            <h1 style="font-family:'Bebas Neue',sans-serif; font-size:clamp(56px, 7.5vw, 118px); line-height:0.92; margin:0 0 22px; letter-spacing:2px; text-wrap:balance; text-shadow:0 8px 60px rgba(0,0,0,0.8)">{{ featured.title }}</h1>
+            <div style="display:flex; align-items:center; gap:14px; margin-bottom:20px; font-size:14px; color:#b8b4b0">
+              <span style="display:inline-flex; align-items:center; gap:6px; color:#ffd166; font-weight:600">★ {{ featured.rating }}</span>
+              <span style="width:4px; height:4px; border-radius:50%; background:#555"></span>
+              <span>{{ featured.year }}</span>
+              <span style="width:4px; height:4px; border-radius:50%; background:#555"></span>
+              <span style="padding:3px 10px; border:1px solid rgba(255,255,255,0.2); border-radius:6px; font-size:11px; letter-spacing:1.5px; text-transform:uppercase">{{ featured.typeLabel }}</span>
+            </div>
+            <p style="font-size:15.5px; line-height:1.7; color:#c9c5c1; max-width:520px; margin:0 0 34px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; text-wrap:pretty">{{ featured.overview }}</p>
+            <div style="display:flex; gap:14px">
+              <button onClick="{{ playFeatured }}" style="display:flex; align-items:center; gap:10px; cursor:pointer; background:var(--accent,#e50914); color:#fff; border:0; font-family:'Sora',sans-serif; font-size:15px; font-weight:600; padding:16px 34px; border-radius:14px; box-shadow:0 12px 40px rgba(229,9,20,0.45); transition:all .25s" style-hover="transform:translateY(-2px); box-shadow:0 18px 50px rgba(229,9,20,0.6)">▶ &nbsp;Watch Now</button>
+              <button onClick="{{ goMovies }}" style="display:flex; align-items:center; gap:10px; cursor:pointer; background:rgba(255,255,255,0.07); color:#fff; border:1px solid rgba(255,255,255,0.14); font-family:'Sora',sans-serif; font-size:15px; font-weight:500; padding:16px 34px; border-radius:14px; backdrop-filter:blur(14px); transition:all .25s" style-hover="background:rgba(255,255,255,0.13); transform:translateY(-2px)">Browse Library</button>
+            </div>
+          </div>
+          <!-- floating 3D posters -->
+          <div style="display:flex; gap:0; align-items:center; perspective:1100px; flex-shrink:0">
+            <sc-for list="{{ floatPosters }}" as="fp" hint-placeholder-count="3">
+              <div style="animation:{{ fp.anim }}; margin-left:{{ fp.ml }}; z-index:{{ fp.z }}">
+                <img src="https://image.tmdb.org/t/p/{{ fp.posterPath }}" alt="" style="width:{{ fp.w }}; aspect-ratio:2/3; object-fit:cover; border-radius:16px; border:1px solid rgba(255,255,255,0.14); box-shadow:0 30px 80px rgba(0,0,0,0.7), 0 0 40px rgba(229,9,20,0.12); transform:perspective(1000px) rotateY(calc(var(--mx,0) * -12deg)) rotateX(calc(var(--my,0) * 8deg)) rotate({{ fp.tilt }}); transition:box-shadow .3s; cursor:pointer" onClick="{{ fp.open }}">
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <!-- genre marquee -->
+      <div style="position:relative; z-index:2; background:var(--accent,#e50914); overflow:hidden; padding:13px 0; transform:rotate(-1.2deg); margin:0 -20px; box-shadow:0 10px 60px rgba(229,9,20,0.35)">
+        <div style="display:flex; white-space:nowrap; animation:marquee 40s linear infinite; width:max-content">
+          <span style="font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:6px; color:#fff; padding-right:40px">{{ genreMarquee }}</span>
+          <span style="font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:6px; color:#fff; padding-right:40px">{{ genreMarquee }}</span>
+        </div>
+      </div>
+
+      <!-- scroll-reactive 3D ring -->
+      <div ref="{{ ringRef }}" style="height:300vh; position:relative; z-index:2">
+        <div style="position:sticky; top:0; height:100vh; overflow:clip; display:flex; flex-direction:column; align-items:center; justify-content:center">
+          <div style="position:absolute; top:50%; left:50%; font-family:'Bebas Neue',sans-serif; font-size:26vw; letter-spacing:12px; color:transparent; -webkit-text-stroke:1px rgba(255,255,255,0.06); white-space:nowrap; transform:translate(-50%,-50%) translateX(calc(var(--ringp,0) * -30vw)); pointer-events:none">CINEMA</div>
+          <div style="text-align:center; margin-bottom:54px; position:relative; z-index:3">
+            <div style="font-size:12px; font-weight:600; letter-spacing:4px; text-transform:uppercase; color:var(--accent,#e50914); margin-bottom:12px">Keep scrolling</div>
+            <div style="font-family:'Bebas Neue',sans-serif; font-size:clamp(40px,5vw,72px); letter-spacing:3px; line-height:1">SPIN THE VAULT</div>
+            <div style="font-size:14px; color:#8f8b87; margin-top:10px">50,000+ movies · 25,000+ series · every genre imaginable</div>
+          </div>
+          <div style="perspective:1400px; position:relative; z-index:2">
+            <div style="position:relative; width:230px; height:345px; transform-style:preserve-3d; transform:rotateX(-5deg) rotateY(calc(var(--ringp,0) * -720deg))">
+              <sc-for list="{{ ringItems }}" as="it" hint-placeholder-count="12">
+                <img src="https://image.tmdb.org/t/p/{{ it.posterPath }}" alt="" onClick="{{ it.open }}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; border-radius:14px; border:1px solid rgba(255,255,255,0.15); box-shadow:0 20px 60px rgba(0,0,0,0.6); transform:{{ it.transform }}; backface-visibility:hidden; cursor:pointer">
+              </sc-for>
+            </div>
+          </div>
+          <div style="position:absolute; bottom:8vh; left:50%; transform:translateX(-50%); width:220px; height:3px; background:rgba(255,255,255,0.08); border-radius:99px; overflow:hidden">
+            <div style="height:100%; background:var(--accent,#e50914); border-radius:99px; width:calc(var(--ringp,0) * 100%); box-shadow:0 0 12px var(--accent,#e50914)"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- content rows -->
+      <div style="position:relative; z-index:2; padding-top:20px">
+        <sc-for list="{{ rows }}" as="row" hint-placeholder-count="3">
+          <div style="padding:34px 56px 6px">
+            <div style="display:flex; align-items:center; gap:14px; margin-bottom:4px">
+              <div style="width:5px; height:26px; background:var(--accent,#e50914); border-radius:99px; box-shadow:0 0 14px rgba(229,9,20,0.6)"></div>
+              <div style="font-family:'Bebas Neue',sans-serif; font-size:32px; letter-spacing:2.5px">{{ row.title }}</div>
+            </div>
+            <div style="display:flex; gap:16px; overflow-x:auto; padding:18px 6px 26px; scroll-snap-type:x proximity; scrollbar-width:none">
+              <sc-for list="{{ row.items }}" as="it" hint-placeholder-count="8">
+                <div onClick="{{ it.open }}" style="flex:0 0 162px; cursor:pointer; scroll-snap-align:start; transition:transform .3s" style-hover="transform:translateY(-8px)">
+                  <div style="position:relative; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.09); background:#111114; box-shadow:0 10px 30px rgba(0,0,0,0.5); transition:all .3s" style-hover="border-color:rgba(229,9,20,0.6); box-shadow:0 16px 44px rgba(229,9,20,0.28)">
+                    <img src="https://image.tmdb.org/t/p/{{ it.posterPath }}" alt="{{ it.title }}" loading="lazy" style="width:162px; height:243px; object-fit:cover; display:block">
+                    <div style="position:absolute; top:8px; right:8px; display:flex; align-items:center; gap:4px; background:rgba(8,8,11,0.72); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:3px 8px; font-size:11px; font-weight:600; color:#ffd166">★ {{ it.rating }}</div>
+                  </div>
+                  <div style="font-size:13px; font-weight:600; margin-top:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ it.title }}</div>
+                  <div style="font-size:11.5px; color:#8f8b87; margin-top:2px">{{ it.year }} · {{ it.typeLabel }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- genre grid -->
+      <div style="position:relative; z-index:2; padding:50px 56px 90px">
+        <div style="display:flex; align-items:center; gap:14px; margin-bottom:26px">
+          <div style="width:5px; height:26px; background:var(--accent,#e50914); border-radius:99px; box-shadow:0 0 14px rgba(229,9,20,0.6)"></div>
+          <div style="font-family:'Bebas Neue',sans-serif; font-size:32px; letter-spacing:2.5px">EVERY GENRE</div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(210px, 1fr)); gap:16px">
+          <sc-for list="{{ genreCards }}" as="g" hint-placeholder-count="12">
+            <div onClick="{{ g.select }}" style="position:relative; overflow:hidden; padding:22px 22px 18px; border-radius:16px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); cursor:pointer; backdrop-filter:blur(10px); transition:all .3s" style-hover="border-color:rgba(229,9,20,0.7); background:rgba(229,9,20,0.08); transform:translateY(-4px); box-shadow:0 14px 40px rgba(229,9,20,0.2)">
+              <div style="font-family:'Bebas Neue',sans-serif; font-size:15px; letter-spacing:2px; color:rgba(255,255,255,0.28); margin-bottom:20px">{{ g.num }}</div>
+              <div style="font-size:17px; font-weight:600">{{ g.name }}</div>
+              <div style="font-size:12px; color:var(--accent,#e50914); margin-top:6px; font-weight:600">Explore →</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- footer -->
+      <div style="position:relative; z-index:2; border-top:1px solid rgba(255,255,255,0.07); padding:36px 56px; display:flex; align-items:center; justify-content:space-between; gap:20px; color:#77736f; font-size:12.5px">
+        <div style="display:flex; align-items:center; gap:10px">
+          <div style="width:8px; height:8px; border-radius:50%; background:var(--accent,#e50914)"></div>
+          <span style="font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:4px; color:#f5f2ee">CRIMSON</span>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ============ BROWSE ============ -->
+  <sc-if value="{{ isBrowse }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Browse" style="position:relative; z-index:2; min-height:100vh; padding:118px 56px 90px">
+      <div style="font-family:'Bebas Neue',sans-serif; font-size:clamp(44px,5vw,74px); letter-spacing:3px; line-height:1; margin-bottom:26px">{{ browseTitle }}</div>
+      <div style="display:flex; gap:10px; margin-bottom:18px">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="2">
+          <button onClick="{{ t.go }}" style="cursor:pointer; font-family:'Sora',sans-serif; font-size:14px; font-weight:600; padding:11px 26px; border-radius:12px; border:1px solid {{ t.border }}; background-color:{{ t.bg }}; color:{{ t.color }}; transition:all .25s" style-hover="border-color:var(--accent,#e50914)">{{ t.label }}</button>
+        </sc-for>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:34px">
+        <sc-for list="{{ chips }}" as="c" hint-placeholder-count="12">
+          <button onClick="{{ c.select }}" style="cursor:pointer; font-family:'Sora',sans-serif; font-size:12.5px; font-weight:500; padding:8px 16px; border-radius:999px; border:1px solid {{ c.border }}; background-color:{{ c.bg }}; color:{{ c.color }}; backdrop-filter:blur(8px); transition:all .2s" style-hover="border-color:var(--accent,#e50914); color:#fff">{{ c.name }}</button>
+        </sc-for>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(164px, 1fr)); gap:22px 18px">
+        <sc-for list="{{ browseCards }}" as="it" hint-placeholder-count="12">
+          <div onClick="{{ it.open }}" style="cursor:pointer; transition:transform .3s" style-hover="transform:translateY(-8px)">
+            <div style="position:relative; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.09); background:#111114; aspect-ratio:2/3; transition:all .3s" style-hover="border-color:rgba(229,9,20,0.6); box-shadow:0 16px 44px rgba(229,9,20,0.28)">
+              <img src="https://image.tmdb.org/t/p/{{ it.posterPath }}" alt="{{ it.title }}" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block">
+              <div style="position:absolute; top:8px; right:8px; display:flex; align-items:center; gap:4px; background:rgba(8,8,11,0.72); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:3px 8px; font-size:11px; font-weight:600; color:#ffd166">★ {{ it.rating }}</div>
+            </div>
+            <div style="font-size:13px; font-weight:600; margin-top:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ it.title }}</div>
+            <div style="font-size:11.5px; color:#8f8b87; margin-top:2px">{{ it.year }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <sc-if value="{{ canLoadMore }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; justify-content:center; margin-top:46px">
+          <button onClick="{{ loadMore }}" style="cursor:pointer; font-family:'Sora',sans-serif; font-size:14px; font-weight:600; padding:15px 44px; border-radius:14px; border:1px solid rgba(229,9,20,0.5); background:rgba(229,9,20,0.1); color:#fff; backdrop-filter:blur(10px); transition:all .25s" style-hover="background:var(--accent,#e50914); box-shadow:0 14px 40px rgba(229,9,20,0.4)">{{ loadMoreLabel }}</button>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- ============ WATCH ============ -->
+  <sc-if value="{{ isWatch }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Watch" style="position:relative; z-index:2; min-height:100vh; padding:104px 0 80px">
+      <img src="https://image.tmdb.org/t/p/{{ watchBackdropPath }}" alt="" style="position:fixed; inset:0; width:100%; height:100%; object-fit:cover; opacity:0.18; filter:blur(30px) saturate(1.2); z-index:0">
+      <div style="position:relative; z-index:2; max-width:1180px; margin:0 auto; padding:0 32px">
+        <button onClick="{{ goHome }}" style="cursor:pointer; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#c9c6c2; font-family:'Sora',sans-serif; font-size:13px; font-weight:500; padding:9px 20px; border-radius:999px; backdrop-filter:blur(10px); margin-bottom:22px; transition:all .25s" style-hover="color:#fff; border-color:var(--accent,#e50914)">← Back</button>
+        <div style="position:relative; aspect-ratio:16/9; border-radius:20px; overflow:hidden; border:1px solid rgba(255,255,255,0.12); background:#0a0a0d; box-shadow:0 40px 100px rgba(0,0,0,0.7), 0 0 80px rgba(229,9,20,0.12)">
+          <sc-if value="{{ hasEmbed }}" hint-placeholder-val="{{ false }}">
+            <iframe src="{{ embedUrl }}" style="position:absolute; inset:0; width:100%; height:100%; border:0" allowFullScreen="{{ true }}" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" referrerPolicy="no-referrer" title="Player"></iframe>
+          </sc-if>
+        </div>
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:30px; margin-top:30px">
+          <div style="max-width:720px">
+            <h1 style="font-family:'Bebas Neue',sans-serif; font-size:clamp(38px,4.5vw,64px); letter-spacing:2px; line-height:0.95; margin:0 0 14px">{{ watchTitle }}</h1>
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; font-size:13.5px; color:#b8b4b0; margin-bottom:16px">
+              <span style="color:#ffd166; font-weight:600">★ {{ watchRating }}</span>
+              <span>{{ watchMeta }}</span>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px">
+              <sc-for list="{{ watchGenres }}" as="wg" hint-placeholder-count="3">
+                <span style="font-size:11.5px; font-weight:600; letter-spacing:1px; text-transform:uppercase; padding:6px 13px; border-radius:999px; background:rgba(229,9,20,0.1); border:1px solid rgba(229,9,20,0.35); color:#ff9199">{{ wg.name }}</span>
+              </sc-for>
+            </div>
+            <p style="font-size:15px; line-height:1.75; color:#c9c5c1; margin:0; text-wrap:pretty">{{ watchOverview }}</p>
+          </div>
+        </div>
+        <sc-if value="{{ isTV }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:44px">
+            <div style="display:flex; align-items:center; gap:14px; margin-bottom:18px">
+              <div style="width:5px; height:24px; background:var(--accent,#e50914); border-radius:99px"></div>
+              <div style="font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:2px">EPISODES</div>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:22px">
+              <sc-for list="{{ seasonChips }}" as="sn" hint-placeholder-count="3">
+                <button onClick="{{ sn.select }}" style="cursor:pointer; font-family:'Sora',sans-serif; font-size:13px; font-weight:600; padding:9px 20px; border-radius:12px; border:1px solid {{ sn.border }}; background-color:{{ sn.bg }}; color:{{ sn.color }}; transition:all .2s" style-hover="border-color:var(--accent,#e50914)">{{ sn.label }}</button>
+              </sc-for>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:14px">
+              <sc-for list="{{ episodeCards }}" as="ep" hint-placeholder-count="6">
+                <div onClick="{{ ep.select }}" style="display:flex; gap:12px; padding:10px; border-radius:14px; cursor:pointer; background:rgba(255,255,255,0.035); border:1px solid {{ ep.border }}; backdrop-filter:blur(8px); transition:all .25s" style-hover="background:rgba(229,9,20,0.08); border-color:rgba(229,9,20,0.5)">
+                  <img src="https://image.tmdb.org/t/p/{{ ep.stillPath }}" alt="" loading="lazy" style="width:112px; height:66px; object-fit:cover; border-radius:8px; background:#1a1a1f; flex-shrink:0">
+                  <div style="min-width:0">
+                    <div style="font-size:11px; font-weight:700; letter-spacing:1px; color:{{ ep.numColor }}">EP {{ ep.num }}</div>
+                    <div style="font-size:13px; font-weight:600; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ ep.name }}</div>
+                    <div style="font-size:11.5px; color:#8f8b87; margin-top:3px">{{ ep.runtime }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ============ SEARCH OVERLAY ============ -->
+  <sc-if value="{{ searchOpen }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Search" style="position:fixed; inset:0; z-index:200; background:rgba(5,5,8,0.72); backdrop-filter:blur(34px) saturate(130%); -webkit-backdrop-filter:blur(34px) saturate(130%); overflow-y:auto; padding:90px 56px 60px; animation:fadeup .3s ease both">
+      <button onClick="{{ closeSearch }}" style="position:fixed; top:22px; right:32px; cursor:pointer; width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.14); color:#fff; font-size:18px; transition:all .25s" style-hover="background:var(--accent,#e50914); transform:rotate(90deg)">✕</button>
+      <div style="max-width:900px; margin:0 auto">
+        <input value="{{ query }}" onChange="{{ onQuery }}" autoFocus="{{ true }}" placeholder="Search movies & TV shows…" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:18px; padding:22px 28px; font-family:'Sora',sans-serif; font-size:22px; color:#fff; outline:none; backdrop-filter:blur(10px)" style-focus="border-color:var(--accent,#e50914); box-shadow:0 0 0 4px rgba(229,9,20,0.15)">
+        <div style="font-size:12.5px; color:#8f8b87; margin:14px 4px 30px">{{ searchHint }}</div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:22px 16px">
+          <sc-for list="{{ results }}" as="it" hint-placeholder-count="0">
+            <div onClick="{{ it.open }}" style="cursor:pointer; transition:transform .3s" style-hover="transform:translateY(-6px)">
+              <div style="border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.1); aspect-ratio:2/3; background:#111114; transition:all .3s" style-hover="border-color:rgba(229,9,20,0.6)">
+                <img src="https://image.tmdb.org/t/p/{{ it.posterPath }}" alt="{{ it.title }}" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block">
+              </div>
+              <div style="font-size:12.5px; font-weight:600; margin-top:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ it.title }}</div>
+              <div style="font-size:11px; color:#8f8b87; margin-top:2px">{{ it.year }} · {{ it.typeLabel }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;accent&quot;: { &quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#e50914&quot;, &quot;options&quot;: [&quot;#e50914&quot;, &quot;#ff2d55&quot;, &quot;#c1121f&quot;, &quot;#ff4d6d&quot;], &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Theme&quot; },
+  &quot;ambientFx&quot;: { &quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Theme&quot; },
+  &quot;autoPlay&quot;: { &quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Player&quot; }
+}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.rootRef = React.createRef();
+    this.ringRef = React.createRef();
+    this.IMG = 'https://image.tmdb.org/t/p/';
+    this.state = {
+      view: 'home', tab: 'movie', featIdx: 0,
+      trending: [], topMovies: [], topTV: [],
+      genres: { movie: [], tv: [] },
+      activeGenre: 0, browseItems: [], browsePage: 1, browseTotal: 1, browseLoading: false,
+      current: null, detail: null, season: 1, episode: 1, episodes: [],
+      searchOpen: false, query: '', results: []
+    };
+  }
+
+  // ---- TMDB ----
+  async tmdb(path, params) {
+    const u = new URL('https://api.themoviedb.org/3' + path);
+    u.searchParams.set('api_key', 'd9f0568167a608d0700093444b0c2da7');
+    Object.entries(params || {}).forEach(([k, v]) => u.searchParams.set(k, String(v)));
+    const r = await fetch(u.toString());
+    if (!r.ok) throw new Error('TMDB ' + r.status);
+    return r.json();
+  }
+
+  accent() {
+    const a = String(this.props.accent ?? '#e50914');
+    return /^#[0-9a-fA-F]{6}$/.test(a) ? a : '#e50914';
+  }
+
+  componentDidMount() {
+    this.loadHome();
+    this._onScroll = () => {
+      const el = this.rootRef.current;
+      if (!el) return;
+      el.style.setProperty('--sy', String(Math.min(window.scrollY, 1400)));
+      const r = this.ringRef.current;
+      if (r) {
+        const rect = r.getBoundingClientRect();
+        const total = Math.max(rect.height - window.innerHeight, 1);
+        const p = Math.max(0, Math.min(1, -rect.top / total));
+        el.style.setProperty('--ringp', p.toFixed(4));
+      }
+    };
+    window.addEventListener('scroll', this._onScroll, { passive: true });
+    this._onMouse = (e) => {
+      const el = this.rootRef.current;
+      if (!el) return;
+      el.style.setProperty('--mx', ((e.clientX / window.innerWidth) * 2 - 1).toFixed(3));
+      el.style.setProperty('--my', ((e.clientY / window.innerHeight) * 2 - 1).toFixed(3));
+    };
+    window.addEventListener('mousemove', this._onMouse, { passive: true });
+    // Only trust player events from the exact vidking origin; validate shape before touching storage.
+    this._onMsg = (e) => {
+      if (e.origin !== 'https://www.vidking.net') return;
+      let d;
+      try { d = typeof e.data === 'string' ? JSON.parse(e.data) : e.data; } catch (_) { return; }
+      if (!d || d.type !== 'PLAYER_EVENT' || !d.data) return;
+      const { id, mediaType, timestamp, season, episode } = d.data;
+      if (!/^[0-9]+$/.test(String(id))) return;
+      if (mediaType !== 'movie' && mediaType !== 'tv') return;
+      const key = 'crimson:resume:' + mediaType + ':' + id + (mediaType === 'tv' ? ':' + (parseInt(season, 10) || 1) + ':' + (parseInt(episode, 10) || 1) : '');
+      try { localStorage.setItem(key, String(Math.max(0, Math.floor(Number(timestamp) || 0)))); } catch (_) {}
+    };
+    window.addEventListener('message', this._onMsg);
+    this._feat = setInterval(() => {
+      this.setState(s => s.view === 'home' && s.trending.length ? { featIdx: (s.featIdx + 1) % Math.min(s.trending.length, 6) } : null);
+    }, 9000);
+    this.applyAccent();
+    this._onScroll();
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('scroll', this._onScroll);
+    window.removeEventListener('mousemove', this._onMouse);
+    window.removeEventListener('message', this._onMsg);
+    clearInterval(this._feat);
+  }
+
+  componentDidUpdate() { this.applyAccent(); }
+  applyAccent() {
+    const el = this.rootRef.current;
+    if (el) el.style.setProperty('--accent', this.accent());
+  }
+
+  async loadHome() {
+    try {
+      const [tr, tm, tv, gm, gt] = await Promise.all([
+        this.tmdb('/trending/all/week'),
+        this.tmdb('/movie/top_rated'),
+        this.tmdb('/tv/popular'),
+        this.tmdb('/genre/movie/list'),
+        this.tmdb('/genre/tv/list')
+      ]);
+      this.setState({
+        trending: (tr.results || []).filter(x => x.backdrop_path && x.poster_path && (x.media_type === 'movie' || x.media_type === 'tv')),
+        topMovies: (tm.results || []).filter(x => x.poster_path),
+        topTV: (tv.results || []).filter(x => x.poster_path),
+        genres: { movie: gm.genres || [], tv: gt.genres || [] }
+      });
+    } catch (err) { console.warn('TMDB load failed', err); }
+  }
+
+  vm(raw) {
+    const type = raw.media_type || (raw.title ? 'movie' : 'tv');
+    return {
+      id: raw.id, type,
+      title: raw.title || raw.name || '',
+      year: String(raw.release_date || raw.first_air_date || '').slice(0, 4) || '—',
+      rating: raw.vote_average ? raw.vote_average.toFixed(1) : '–',
+      poster: raw.poster_path ? this.IMG + 'w342' + raw.poster_path : '',
+      backdrop: raw.backdrop_path ? this.IMG + 'w1280' + raw.backdrop_path : '',
+      overview: raw.overview || '',
+      typeLabel: type === 'tv' ? 'Series' : 'Movie',
+      badge: raw.media_type ? 'Trending this week' : 'Featured',
+      open: () => this.open(raw)
+    };
+  }
+
+  open(raw) {
+    const id = Number(raw.id);
+    if (!Number.isInteger(id) || id <= 0) return;
+    const type = raw.media_type || (raw.title ? 'movie' : 'tv');
+    window.scrollTo(0, 0);
+    this.setState({ view: 'watch', searchOpen: false, current: { id, type }, detail: null, season: 1, episode: 1, episodes: [] });
+    this.loadDetail(id, type);
+  }
+
+  async loadDetail(id, type) {
+    try {
+      const d = await this.tmdb('/' + type + '/' + id);
+      this.setState({ detail: d });
+      if (type === 'tv') {
+        const first = ((d.seasons || []).find(s => s.season_number > 0) || {}).season_number || 1;
+        this.loadSeason(id, first);
+      }
+    } catch (err) { console.warn('detail failed', err); }
+  }
+
+  async loadSeason(id, sn) {
+    sn = Math.max(1, Math.floor(Number(sn) || 1));
+    try {
+      const s = await this.tmdb('/tv/' + id + '/season/' + sn);
+      this.setState({ season: sn, episode: 1, episodes: s.episodes || [] });
+    } catch (err) { console.warn('season failed', err); }
+  }
+
+  goHome() {
+    window.scrollTo(0, 0);
+    this.setState({ view: 'home', searchOpen: false });
+  }
+
+  goBrowse(tab, genreId) {
+    window.scrollTo(0, 0);
+    this.setState({ view: 'browse', searchOpen: false, tab, activeGenre: genreId || 0, browseItems: [], browsePage: 1, browseTotal: 1 }, () => this.fetchBrowse(true));
+  }
+
+  async fetchBrowse(reset) {
+    const { tab, activeGenre } = this.state;
+    const page = reset ? 1 : this.state.browsePage + 1;
+    this.setState({ browseLoading: true });
+    const params = { sort_by: 'popularity.desc', page, 'vote_count.gte': 40, include_adult: false };
+    if (activeGenre) params.with_genres = activeGenre;
+    try {
+      const d = await this.tmdb('/discover/' + tab, params);
+      this.setState(s => ({
+        browseItems: (reset ? [] : s.browseItems).concat((d.results || []).filter(x => x.poster_path)),
+        browsePage: page, browseTotal: d.total_pages || 1, browseLoading: false
+      }));
+    } catch (err) { this.setState({ browseLoading: false }); }
+  }
+
+  doSearch(q) {
+    q = String(q).trim().slice(0, 100);
+    if (!q) { this.setState({ results: [] }); return; }
+    this.tmdb('/search/multi', { query: q, include_adult: false })
+      .then(d => this.setState({ results: (d.results || []).filter(x => (x.media_type === 'movie' || x.media_type === 'tv') && x.poster_path) }))
+      .catch(() => {});
+  }
+
+  embedUrl() {
+    const c = this.state.current;
+    if (!c) return '';
+    const id = Number(c.id);
+    if (!Number.isInteger(id) || id <= 0) return '';
+    const color = this.accent().slice(1);
+    const auto = this.props.autoPlay ? 'true' : 'false';
+    let url, key;
+    if (c.type === 'tv') {
+      const s = Math.max(1, Math.floor(this.state.season));
+      const e = Math.max(1, Math.floor(this.state.episode));
+      url = 'https://www.vidking.net/embed/tv/' + id + '/' + s + '/' + e + '?color=' + color + '&autoPlay=' + auto + '&nextEpisode=true&episodeSelector=true';
+      key = 'crimson:resume:tv:' + id + ':' + s + ':' + e;
+    } else {
+      url = 'https://www.vidking.net/embed/movie/' + id + '?color=' + color + '&autoPlay=' + auto;
+      key = 'crimson:resume:movie:' + id;
+    }
+    try {
+      const p = parseInt(localStorage.getItem(key) || '0', 10);
+      if (p > 30) url += '&progress=' + p;
+    } catch (_) {}
+    return url;
+  }
+
+  renderVals() {
+    const s = this.state;
+    const acc = this.accent();
+    const trendingVM = s.trending.map(r => this.vm(r));
+    const featured = trendingVM.length ? trendingVM[s.featIdx % trendingVM.length] : { title: 'Loading the vault…', overview: '', rating: '–', year: '', typeLabel: '', badge: 'Trending this week', backdrop: undefined };
+
+    const floatSrc = trendingVM.filter((_, i) => i !== (s.featIdx % (trendingVM.length || 1))).slice(0, 3);
+    const floatPosters = floatSrc.map((it, i) => ({
+      poster: it.poster, open: it.open,
+      anim: (i === 1 ? 'floaty2 7s' : 'floaty ' + (6 + i) + 's') + ' ease-in-out infinite',
+      ml: i === 0 ? '0' : '-46px',
+      z: String(3 - i),
+      w: i === 1 ? '190px' : '150px',
+      tilt: (i - 1) * 7 + 'deg'
+    }));
+
+    const ringItems = trendingVM.slice(0, 12).map((it, i) => ({
+      poster: it.poster, open: it.open,
+      transform: 'rotateY(' + (i * 30) + 'deg) translateZ(430px)'
+    }));
+
+    const rows = [
+      { title: 'TRENDING THIS WEEK', items: trendingVM },
+      { title: 'TOP RATED MOVIES', items: s.topMovies.map(r => this.vm(Object.assign({ media_type: 'movie' }, r))) },
+      { title: 'POPULAR SERIES', items: s.topTV.map(r => this.vm(Object.assign({ media_type: 'tv' }, r))) }
+    ];
+
+    const gset = s.genres[s.tab] || [];
+    const allGenres = s.genres.movie;
+    const genreMarquee = allGenres.length ? allGenres.map(g => g.name).join('  ✦  ') + '  ✦  ' : 'ACTION ✦ DRAMA ✦ HORROR ✦ SCI-FI ✦ COMEDY ✦ THRILLER ✦ ';
+
+    const genreCards = allGenres.map((g, i) => ({
+      name: g.name, num: String(i + 1).padStart(2, '0'),
+      select: () => this.goBrowse('movie', g.id)
+    }));
+
+    const view = s.view;
+    const navLinks = [
+      { label: 'Home', active: view === 'home', go: () => this.goHome() },
+      { label: 'Movies', active: view === 'browse' && s.tab === 'movie', go: () => this.goBrowse('movie', 0) },
+      { label: 'TV Shows', active: view === 'browse' && s.tab === 'tv', go: () => this.goBrowse('tv', 0) }
+    ].map(l => ({
+      label: l.label, go: l.go,
+      color: l.active ? '#fff' : '#a5a19d',
+      bg: l.active ? 'rgba(229,9,20,0.18)' : 'transparent'
+    }));
+
+    const tabs = ['movie', 'tv'].map(t => ({
+      label: t === 'movie' ? 'Movies' : 'TV Shows',
+      go: () => this.goBrowse(t, 0),
+      border: s.tab === t ? acc : 'rgba(255,255,255,0.12)',
+      bg: s.tab === t ? 'rgba(229,9,20,0.15)' : 'rgba(255,255,255,0.04)',
+      color: s.tab === t ? '#fff' : '#a5a19d'
+    }));
+
+    const chips = [{ id: 0, name: 'All' }].concat(gset).map(g => ({
+      name: g.name,
+      select: () => this.goBrowse(s.tab, g.id),
+      border: s.activeGenre === g.id ? acc : 'rgba(255,255,255,0.1)',
+      bg: s.activeGenre === g.id ? 'rgba(229,9,20,0.16)' : 'rgba(255,255,255,0.03)',
+      color: s.activeGenre === g.id ? '#fff' : '#a5a19d'
+    }));
+
+    const activeGenreName = (gset.find(g => g.id === s.activeGenre) || {}).name;
+    const browseTitle = (s.tab === 'movie' ? 'MOVIES' : 'TV SHOWS') + (activeGenreName ? ' — ' + activeGenreName.toUpperCase() : '');
+    const browseCards = s.browseItems.map(r => this.vm(Object.assign({ media_type: s.tab }, r)));
+
+    // watch
+    const d = s.detail;
+    const isTV = !!(s.current && s.current.type === 'tv');
+    const watchTitle = d ? (d.title || d.name || '') : 'Loading…';
+    const rt = d && d.runtime ? d.runtime + ' min' : (d && d.number_of_seasons ? d.number_of_seasons + ' season' + (d.number_of_seasons > 1 ? 's' : '') : '');
+    const watchMeta = d ? [String(d.release_date || d.first_air_date || '').slice(0, 4), rt].filter(Boolean).join('  ·  ') : '';
+    const seasonChips = (d && d.seasons ? d.seasons : []).filter(x => x.season_number > 0).map(x => ({
+      label: 'Season ' + x.season_number,
+      select: () => this.loadSeason(s.current.id, x.season_number),
+      border: s.season === x.season_number ? acc : 'rgba(255,255,255,0.12)',
+      bg: s.season === x.season_number ? 'rgba(229,9,20,0.16)' : 'rgba(255,255,255,0.04)',
+      color: s.season === x.season_number ? '#fff' : '#a5a19d'
+    }));
+    const episodeCards = s.episodes.map(ep => ({
+      num: ep.episode_number,
+      name: ep.name || 'Episode ' + ep.episode_number,
+      runtime: ep.runtime ? ep.runtime + ' min' : '',
+      still: ep.still_path ? this.IMG + 'w300' + ep.still_path : undefined,
+      border: s.episode === ep.episode_number ? 'rgba(229,9,20,0.7)' : 'rgba(255,255,255,0.08)',
+      numColor: s.episode === ep.episode_number ? acc : '#8f8b87',
+      select: () => { this.setState({ episode: ep.episode_number }); }
+    }));
+
+    return {
+      rootRef: this.rootRef, ringRef: this.ringRef,
+      showFx: this.props.ambientFx ?? true,
+      isHome: view === 'home', isBrowse: view === 'browse', isWatch: view === 'watch',
+      navLinks, featured, floatPosters, ringItems, rows, genreMarquee, genreCards,
+      playFeatured: () => { if (s.trending.length) this.open(s.trending[s.featIdx % s.trending.length]); },
+      goHome: () => this.goHome(),
+      goMovies: () => this.goBrowse('movie', 0),
+      tabs, chips, browseTitle, browseCards,
+      canLoadMore: view === 'browse' && s.browseItems.length > 0 && s.browsePage < s.browseTotal,
+      loadMore: () => { if (!s.browseLoading) this.fetchBrowse(false); },
+      loadMoreLabel: s.browseLoading ? 'Loading…' : 'Load More',
+      watchTitle, watchMeta,
+      watchRating: d && d.vote_average ? d.vote_average.toFixed(1) : '–',
+      watchOverview: d ? d.overview || '' : '',
+      watchGenres: d && d.genres ? d.genres : [],
+      watchBackdrop: d && d.backdrop_path ? this.IMG + 'w1280' + d.backdrop_path : undefined,
+      isTV, seasonChips, episodeCards,
+      hasEmbed: !!this.embedUrl(), embedUrl: this.embedUrl(),
+      searchOpen: s.searchOpen,
+      openSearch: () => this.setState({ searchOpen: true }),
+      closeSearch: () => this.setState({ searchOpen: false, query: '', results: [] }),
+      query: s.query,
+      onQuery: (e) => {
+        const q = e.target.value;
+        this.setState({ query: q });
+        clearTimeout(this._qt);
+        this._qt = setTimeout(() => this.doSearch(q), 320);
+      },
+      searchHint: s.query.trim() ? (s.results.length ? s.results.length + ' results' : 'No results yet…') : 'Try “Dune”, “Breaking Bad”, “Oppenheimer”…',
+      results: s.results.map(r => this.vm(r))
+    };
+  }
+}
+</script>
+</body>
+</html>
